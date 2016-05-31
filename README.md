@@ -224,12 +224,16 @@ class MatrixController extends Controller
 Important Notes
 ---------------
 
-###
-In the example above, we must note several **IMPORTANT** things :
+In the example above, we must note several **IMPORTANT** things.
 
-- You **MUST** work with the [owning side](http://doctrine-orm.readthedocs.io/projects/doctrine-orm/en/latest/reference/unitofwork-associations.html)
+### Owning side
+
+You **MUST** work with the [owning side](http://doctrine-orm.readthedocs.io/projects/doctrine-orm/en/latest/reference/unitofwork-associations.html)
   of your association (i.e. the entity that has the `ìnversedBy` attribute on its ManyToMany property)
-- The two entities **MUST** have a `__toString` method to render the label
+
+### __toString
+
+The two entities **MUST** have a `__toString` method to render the label
 
 
 MIT License
