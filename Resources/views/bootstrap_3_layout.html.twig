@@ -1,0 +1,22 @@
+{% block many_to_many_matrix_widget %}
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th></th>
+            {% for choice in form %}
+                <th>{{ choice.vars.label|trans }}</th>
+            {% endfor %}
+        </tr>
+        </thead>
+        <tbody>
+        {% for row in matrix %}
+            <tr>
+                <th>{{ row.label }}</th>
+                {% for checkbox in row.checkboxes %}
+                    <td>{{ form_widget(checkbox) }}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock many_to_many_matrix_widget %}

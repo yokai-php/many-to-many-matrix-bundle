@@ -1,0 +1,25 @@
+{
+    "name": "yokai/many-to-many-matrix-bundle",
+    "description": "Render a Doctrine ManyToMany relation has matrix form type",
+    "keywords": ["matrix", "form", "doctrine", "many-to-many", "symfony"],
+    "license": "MIT",
+    "type": "symfony-bundle",
+    "authors": [
+        {
+            "name": "Yann Eugoné",
+            "email": "yann.eugone@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.5.9",
+        "symfony/framework-bundle": "~2.8|~3.0",
+        "twig/twig": "~1.20|~2.0"
+    },
+    "require-dev": {},
+    "autoload": {
+        "psr-4": {
+            "Yokai\\ManyToManyMatrixBundle\\": ""
+        }
+    },
+    "minimum-stability": "stable"
+}
