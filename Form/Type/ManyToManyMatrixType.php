@@ -4,6 +4,7 @@ namespace Yokai\ManyToManyMatrixBundle\Form\Type;
 
 use Doctrine\Common\Persistence\ManagerRegistry;
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
@@ -51,6 +52,7 @@ class ManyToManyMatrixType extends AbstractType
 
                     $class = $options['class'];
                     $association = $options['association'];
+                    $queryBuilder = $options['query_builder'];
                     $targetClass = $this->getAssociationTargetClass($class, $association);
 
                     foreach ($entities as $idx => $entity) {
@@ -65,6 +67,13 @@ class ManyToManyMatrixType extends AbstractType
                                     'expanded' => true,
                                     'required' => false,
                                     'label' => (string) $entity,
+                                    'query_builder' => function (EntityRepository $repository) use ($queryBuilder, $entity) {
+                                        if (!is_callable($queryBuilder)) {
+                                            return $repository->createQueryBuilder('e');
+                                        }
+
+                                        return call_user_func($queryBuilder, $repository, $entity);
+                                    }
                                 ]
                             )
                         ;
@@ -99,6 +108,8 @@ class ManyToManyMatrixType extends AbstractType
                     return $association;
                 }
             )
+            ->setDefault('query_builder', null)
+            ->setAllowedTypes('query_builder', ['null', 'callable'])
         ;
     }
 
