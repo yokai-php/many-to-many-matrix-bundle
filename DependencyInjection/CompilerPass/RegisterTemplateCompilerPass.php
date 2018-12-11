@@ -19,7 +19,7 @@ class RegisterTemplateCompilerPass implements CompilerPassInterface
             return;
         }
 
-        $template = 'YokaiManyToManyMatrixBundle::bootstrap_3_layout.html.twig';
+        $template = '@YokaiManyToManyMatrix/bootstrap_3_layout.html.twig';
 
         $resources = $container->getParameter('twig.form.resources');
         if (!in_array($template, $resources)) {
