@@ -22,7 +22,7 @@
     "require-dev": {},
     "autoload": {
         "psr-4": {
-            "Yokai\\ManyToManyMatrixBundle\\": ""
+            "Yokai\\ManyToManyMatrixBundle\\": "src/"
         }
     },
     "minimum-stability": "stable",
