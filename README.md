@@ -10,22 +10,19 @@ Installation
 ### Add the bundle as dependency with Composer
 
 ``` bash
-$ php composer.phar require yokai/many-to-many-matrix-bundle
+composer require yokai/many-to-many-matrix-bundle
 ```
 
-### Enable the bundle in the kernel
+### Enable the bundle
 
 ``` php
 <?php
-// app/AppKernel.php
+// config/bundles.php
 
-public function registerBundles()
-{
-    $bundles = [
-        // ...
-        new Yokai\ManyToManyMatrixBundle\YokaiManyToManyMatrixBundle(),
-    ];
-}
+return [
+    // ...
+    Yokai\ManyToManyMatrixBundle\YokaiManyToManyMatrixBundle::class => ['all' => true],
+];
 ```
 
 
@@ -37,46 +34,31 @@ There is a ManyToMany between `Role` and `User`.
 
 ```php
 <?php
-// src/AppBundle/Entity/User.php
 
-namespace AppBundle\Entity;
+namespace App\Entity;
 
-use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
-/**
- * @ORM\Entity()
- * @ORM\Table(name="user")
- */
+#[ORM\Entity]
+#[ORM\Table(name: 'user')]
 class User
 {
-    /**
-     * @var int
-     *
-     * @ORM\Column(name="id", type="integer")
-     * @ORM\Id()
-     * @ORM\GeneratedValue(strategy="AUTO")
-     */
-    private $id;
+    #[ORM\Column(type: 'integer')]
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    private ?int $id = null;
+
+    #[ORM\Column(type: 'string', unique: true)]
+    private string $email;
 
     /**
-     * @var string
-     *
-     * @ORM\Column(name="email", type="string", length=255, unique=true)
+     * @var Collection<Role>
      */
-    private $email;
+    #[ORM\ManyToMany(targetEntity: Role::class, inversedBy: 'users')]
+    private Collection $roles;
 
-    /**
-     * @var Role[]|ArrayCollection
-     *
-     * @ORM\ManyToMany(targetEntity="Role", mappedBy="users")
-     */
-    private $roles;
-
-    /**
-     * @return string
-     */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->email;
     }
@@ -87,43 +69,31 @@ class User
 
 ```php
 <?php
-// src/AppBundle/Entity/Role.php
 
-namespace AppBundle\Entity;
+namespace App\Entity;
 
-use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
-/**
- * @ORM\Entity()
- * @ORM\Table(name="role")
- */
+#[ORM\Entity]
+#[ORM\Table(name: 'role')]
 class Role
 {
-    /**
-     * @var int
-     *
-     * @ORM\Column(name="id", type="integer")
-     * @ORM\Id()
-     * @ORM\GeneratedValue(strategy="AUTO")
-     */
-    private $id;
+    #[ORM\Column(type: 'integer')]
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    private ?int $id = null;
+
+    #[ORM\Column(type: 'string', unique: true)]
+    private string $role;
 
     /**
-     * @var string
-     *
-     * @ORM\Column(name="role", type="string", length=255, unique=true)
+     * @var Collection<User>
      */
-    private $role;
+    #[ORM\ManyToMany(targetEntity: User::class, inversedBy: 'roles')]
+    private Collection $users;
 
-    /**
-     * @var User[]|ArrayCollection
-     *
-     * @ORM\ManyToMany(targetEntity="User", inversedBy="roles")
-     */
-    private $users;
-
-    public function __toString()
+    public function __toString(): string
     {
         return $this->role;
     }
@@ -136,30 +106,23 @@ I want to create a form matrix that will display the relation of these entities.
 
 ```php
 <?php
-// src/AppBundle/Controller/MatrixController.php
-namespace AppBundle\Controller;
 
-use AppBundle\Entity\Role;
-use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\EntityRepository;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+namespace App\Controller;
+
+use App\Entity\Role;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
 use Yokai\ManyToManyMatrixBundle\Form\Type\ManyToManyMatrixType;
 
-class MatrixController extends Controller
+class MatrixController extends AbstractController
 {
-    /**
-     * @Route("/role-matrix", name="role-matrix")
-     *
-     * @param Request $request
-     *
-     * @return Response
-     */
-    public function roleMatrixAction(Request $request)
+    #[Route(path: '/role-matrix', name: 'role-matrix')]
+    public function roleMatrixAction(Request $request, EntityManagerInterface $manager): Response
     {
-        $roles = $this->getRepository()->findAll();
+        $roles = $manager->getRepository(Role::class)->findAll();
 
         $form = $this->createForm(
             ManyToManyMatrixType::class,
@@ -171,14 +134,11 @@ class MatrixController extends Controller
         );
 
         $form->handleRequest($request);
-
         if (!$form->isSubmitted() || !$form->isValid()) {
             return $this->render('role-matrix.html.twig', [
                 'form' => $form->createView(),
             ]);
         }
-
-        $manager = $this->getManager();
 
         foreach ($roles as $role) {
             $manager->persist($role);
@@ -187,22 +147,6 @@ class MatrixController extends Controller
         $manager->flush($roles);
 
         return $this->redirectToRoute('role-matrix');
-    }
-
-    /**
-     * @return EntityRepository
-     */
-    private function getRepository()
-    {
-        return $this->getDoctrine()->getRepository(Role::class);
-    }
-
-    /**
-     * @return EntityManager
-     */
-    private function getManager()
-    {
-        return $this->getDoctrine()->getManagerForClass(Role::class);
     }
 }
 ```
@@ -239,7 +183,7 @@ The two entities **MUST** have a `__toString` method to render the label
 MIT License
 -----------
 
-License can be found [here](https://github.com/yann-eugone/many-to-many-matrix-bundle/blob/master/Resources/meta/LICENSE).
+License can be found [here](https://github.com/yann-eugone/many-to-many-matrix-bundle/blob/main/LICENSE).
 
 
 Authors
