@@ -3,8 +3,12 @@ YokaiManyToManyMatrixBundle
 
 > **Warning**
 > You are viewing an outdated version of this bundle: `1.x`
+>
 > Please switch to `main` branch for an up-to-date documentation:
+>
 > https://github.com/yokai-php/many-to-many-matrix-bundle/blob/main/README.md
+
+------------
 
 This bundle aims to render Doctrine ManyToMany relations as a matrix in a Symfony form.
 
