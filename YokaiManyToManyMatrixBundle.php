@@ -26,7 +26,7 @@ class YokaiManyToManyMatrixBundle extends Bundle
     /**
      * @inheritDoc
      */
-    public function getContainerExtension()
+    public function getContainerExtension(): YokaiManyToManyMatrixExtension
     {
         return new YokaiManyToManyMatrixExtension();
     }
@@ -34,7 +34,7 @@ class YokaiManyToManyMatrixBundle extends Bundle
     /**
      * @inheritDoc
      */
-    public function getNamespace()
+    public function getNamespace(): string
     {
         return __NAMESPACE__;
     }
@@ -42,7 +42,7 @@ class YokaiManyToManyMatrixBundle extends Bundle
     /**
      * @inheritDoc
      */
-    public function getPath()
+    public function getPath(): string
     {
         return __DIR__;
     }
