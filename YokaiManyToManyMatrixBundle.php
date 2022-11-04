@@ -9,7 +9,7 @@ use Yokai\ManyToManyMatrixBundle\DependencyInjection\CompilerPass\RegisterTempla
 use Yokai\ManyToManyMatrixBundle\DependencyInjection\YokaiManyToManyMatrixExtension;
 
 /**
- * @author Yann Eugoné <yann.eugone@gmail.com>
+ * @author Yann Eugoné <eugone.yann@gmail.com>
  */
 class YokaiManyToManyMatrixBundle extends Bundle
 {
