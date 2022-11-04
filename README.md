@@ -144,7 +144,7 @@ class MatrixController extends AbstractController
             $manager->persist($role);
         }
 
-        $manager->flush($roles);
+        $manager->flush();
 
         return $this->redirectToRoute('role-matrix');
     }
@@ -162,7 +162,7 @@ class MatrixController extends AbstractController
 {% endblock %}
 ```
 
-![Screenshot](Resources/screenshot.png)
+![Screenshot](docs/screenshot.png)
 
 
 Important Notes
