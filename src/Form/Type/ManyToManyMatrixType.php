@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Yokai\ManyToManyMatrixBundle\Form\Type;
 
-use Doctrine\Persistence\ManagerRegistry;
-use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Exception\InvalidArgumentException;
@@ -38,55 +40,55 @@ class ManyToManyMatrixType extends AbstractType
         $this->doctrine = $doctrine;
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function buildForm(FormBuilderInterface $builder, array $options)
+    public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
             ->addEventListener(
                 FormEvents::POST_SET_DATA,
                 function (FormEvent $event) use ($options) {
+                    /** @var array<int, object> $entities */
                     $entities = $event->getData();
                     $form = $event->getForm();
 
+                    /** @var class-string $class */
                     $class = $options['class'];
+                    /** @var string $association */
                     $association = $options['association'];
+                    /** @var callable|null $queryBuilder */
                     $queryBuilder = $options['query_builder'];
+
                     $targetClass = $this->getAssociationTargetClass($class, $association);
 
-                    foreach ($entities as $idx => $entity) {
-                        $form
-                            ->add(
-                                $idx,
-                                EntityType::class,
-                                [
-                                    'property_path' => sprintf('[%d].%s', $idx, $association),
-                                    'class' => $targetClass,
-                                    'multiple' => true,
-                                    'expanded' => true,
-                                    'required' => false,
-                                    'label' => (string) $entity,
-                                    'query_builder' => function (EntityRepository $repository) use ($queryBuilder, $entity) {
-                                        if (!is_callable($queryBuilder)) {
-                                            return $repository->createQueryBuilder('e');
-                                        }
+                    $choices = null;
+                    if (!is_callable($queryBuilder)) {
+                        $choices = $this->doctrine->getRepository($targetClass)->findAll();
+                    }
 
-                                        return call_user_func($queryBuilder, $repository, $entity);
-                                    }
-                                ]
-                            )
-                        ;
+                    foreach ($entities as $idx => $entity) {
+                        $formOptions = [
+                            'property_path' => sprintf('[%d].%s', $idx, $association),
+                            'class' => $targetClass,
+                            'multiple' => true,
+                            'expanded' => true,
+                            'required' => false,
+                            'label' => (string) $entity,
+                        ];
+                        if ($choices !== null) {
+                            $formOptions['choices'] = $choices;
+                        } else {
+                            $formOptions['query_builder'] = function (EntityRepository $repository) use ($queryBuilder, $entity) {
+                                return call_user_func($queryBuilder, $repository, $entity);
+                            };
+                        }
+
+                        $form->add((string) $idx, EntityType::class, $formOptions);
                     }
                 }
             )
         ;
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function configureOptions(OptionsResolver $resolver)
+    public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver
             ->setRequired(['class', 'association'])
@@ -102,8 +104,11 @@ class ManyToManyMatrixType extends AbstractType
             ->setNormalizer(
                 'association',
                 function (Options $options, $association) {
+                    /** @var class-string $class */
+                    $class = $options['class'];
+
                     //if no manager found nor no association on the entity, an exception will be thrown
-                    $this->getAssociationTargetClass($options['class'], $association);
+                    $this->getAssociationTargetClass($class, $association);
 
                     return $association;
                 }
@@ -113,14 +118,13 @@ class ManyToManyMatrixType extends AbstractType
         ;
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function finishView(FormView $view, FormInterface $form, array $options)
+    public function finishView(FormView $view, FormInterface $form, array $options): void
     {
         $matrix = [];
         foreach ($view->children as $abscissa => $choice) {
+            dump(['abscissa' => $choice->vars['label']]);
             foreach ($choice->children as $ordinate => $checkbox) {
+                dump(['checkbox' => $checkbox->vars['label']]);
                 if (!isset($matrix[$ordinate])) {
                     $matrix[$ordinate] = [
                         'label' => $checkbox->vars['label'],
@@ -138,16 +142,16 @@ class ManyToManyMatrixType extends AbstractType
     /**
      * Gets the object manager associated with a given class
      *
-     * @param string $class A persistent object class name
+     * @param class-string $class A persistent object class name
      *
-     * @return EntityManager The entity manager
+     * @return EntityManagerInterface The entity manager
      *
      * @throws InvalidArgumentException If no manager found for this object class name
      */
-    private function getManager($class)
+    private function getManager(string $class): EntityManagerInterface
     {
         $manager = $this->doctrine->getManagerForClass($class);
-        if (null === $manager) {
+        if (!$manager instanceof EntityManagerInterface) {
             throw new InvalidArgumentException(
                 sprintf('There is no Doctrine manager for class "%s".', $class)
             );
@@ -159,21 +163,21 @@ class ManyToManyMatrixType extends AbstractType
     /**
      * Returns the target class name of the given association.
      *
-     * @param string $class     A persistent object class name
-     * @param string $assocName A persistent object association name
+     * @param class-string $class     A persistent object class name
+     * @param string       $assocName A persistent object association name
      *
-     * @return string The target class name of the given association
+     * @return class-string The target class name of the given association
      *
      * @throws InvalidArgumentException If no manager found for this object class name
      * @throws InvalidArgumentException If no association found for this object class name
      * @throws InvalidArgumentException If the association found for this object class name is not Many-To-Many
      */
-    private function getAssociationTargetClass($class, $assocName)
+    private function getAssociationTargetClass(string $class, string $assocName): string
     {
         $manager = $this->getManager($class);
         $metadata = $manager->getClassMetadata($class);
 
-        if (!in_array($assocName, $metadata->getAssociationNames())) {
+        if (!in_array($assocName, $metadata->getAssociationNames(), true)) {
             throw new InvalidArgumentException(
                 sprintf('The association "%s" on entity "%s" does not exists.', $assocName, $class)
             );
@@ -181,7 +185,7 @@ class ManyToManyMatrixType extends AbstractType
 
         $mapping = $metadata->getAssociationMapping($assocName);
 
-        if (ClassMetadataInfo::MANY_TO_MANY !== $mapping['type']) {
+        if ($mapping['type'] !== ClassMetadataInfo::MANY_TO_MANY) {
             throw new InvalidArgumentException(
                 sprintf('The association "%s" on entity "%s" is not a many-to-many relation.', $assocName, $class)
             );
