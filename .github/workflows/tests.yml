@@ -1,0 +1,90 @@
+name: "Tests"
+
+on:
+  pull_request:
+  push:
+    branches:
+      - "3.x"
+
+jobs:
+  phpunit:
+    name: "PHPUnit"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - php-version: 7.4
+            symfony-version: 5.4.*
+          - php-version: 8.1
+            symfony-version: 5.4.*
+          - php-version: 8.1
+            symfony-version: 6.1.*
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v2
+      - name: "Setup PHP"
+        uses: shivammathur/setup-php@v2
+        with:
+          coverage: none
+          php-version: ${{ matrix.php-version }}
+      - name: "Install dependencies with composer"
+        run: |
+          composer require --no-update "symfony/form:${{ matrix.symfony-version }}"
+          composer require --no-update "symfony/dependency-injection:${{ matrix.symfony-version }}"
+          composer require --no-update "symfony/framework-bundle:${{ matrix.symfony-version }}"
+          composer update --no-interaction --no-progress
+      - name: "Run tests with PhpUnit"
+        run: vendor/bin/phpunit
+
+  phpstan:
+    name: "PhpStan"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v2
+      - name: "Setup PHP"
+        uses: shivammathur/setup-php@v2
+        with:
+          coverage: none
+          php-version: 8.1
+      - name: "Install dependencies with composer"
+        run: composer update --no-interaction --no-progress
+      - name: "Run static analysis with PhpStan"
+        run: vendor/bin/phpstan analyze
+
+  checkstyke:
+    name: "Checkstyle"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v2
+      - name: "Setup PHP"
+        uses: shivammathur/setup-php@v2
+        with:
+          coverage: none
+          php-version: 8.1
+      - name: "Install dependencies with composer"
+        run: composer update --no-interaction --no-progress
+      - name: "Run checkstyle with EasyCodingStandard"
+        run: vendor/bin/ecs
+
+  codecov:
+    name: "Code coverage"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v2
+      - name: "Setup PHP"
+        uses: shivammathur/setup-php@v2
+        with:
+          coverage: xdebug
+          php-version: 8.1
+      - name: "Install dependencies with composer"
+        run: composer update --no-interaction --no-progress
+      - name: "Run tests with PhpUnit"
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: |
+          vendor/bin/phpunit --coverage-clover coverage.xml
+      - name: "Upload coverage to Codecov"
+        uses: codecov/codecov-action@v1

@@ -1,0 +1,84 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Yokai\ManyToManyMatrixBundle\Tests\App;
+
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Tools\SchemaTool;
+use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\Form\FormFactoryInterface;
+use Twig\Environment;
+use Yokai\ManyToManyMatrixBundle\Form\Type\ManyToManyMatrixType;
+use Yokai\ManyToManyMatrixBundle\Tests\ContainerTestAccessor;
+use Yokai\ManyToManyMatrixBundle\Tests\App\Entity\Role;
+use Yokai\ManyToManyMatrixBundle\Tests\App\Entity\User;
+
+class FunctionalTest extends KernelTestCase
+{
+    public function testFoo()
+    {
+        $container = self::bootKernel()->getContainer();
+        /** @var EntityManagerInterface $entityManager */
+        $entityManager = $container->get(EntityManagerInterface::class);
+        /** @var FormFactoryInterface $formFactory */
+        $formFactory = $container->get(FormFactoryInterface::class);
+
+        $this->loadFixtures($entityManager);
+
+        $roles = $entityManager->getRepository(Role::class)->findAll();
+
+        $form = $formFactory->create(
+            ManyToManyMatrixType::class,
+            $roles,
+            [
+                'class' => Role::class,
+                'association' => 'users',
+            ]
+        );
+
+        self::assertTrue(true);
+
+//        $template = $twig->createTemplate('{{ form(form) }}');
+//        dump($twig->render($template, ['form' => $form->createView()]));
+
+//        foreach ($form->createView()->children as $formView) {
+//            dump($formView->vars['choices']);
+//            dump($formView->children);
+//        }
+//
+//        $form->handleRequest($request);
+
+//        foreach ($roles as $role) {
+//            $entityManager->persist($role);
+//        }
+//
+//        $entityManager->flush();
+    }
+
+    private function loadFixtures(EntityManagerInterface $entityManager): void
+    {
+        $connection = $entityManager->getConnection();
+
+        $database = $connection->getParams()['path'];
+        if (file_exists($database)) {
+            unlink($database);
+        }
+
+        (new SchemaTool($entityManager))
+            ->createSchema($entityManager->getMetadataFactory()->getAllMetadata());
+
+        $entityManager->persist($viewAdmin = new Role('VIEW_ADMIN'));
+        $entityManager->persist($writeAdmin = new Role('WRITE_ADMIN'));
+        $entityManager->persist($deleteAdmin = new Role('DELETE_ADMIN'));
+
+        $entityManager->persist($john = new User('john@doe.us'));
+        $john->addRole($viewAdmin);
+
+        $entityManager->persist($marie = new User('marie@doe.us'));
+        $marie->addRole($viewAdmin);
+        $marie->addRole($writeAdmin);
+
+        $entityManager->flush();
+    }
+}
